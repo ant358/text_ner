@@ -1,12 +1,4 @@
-FROM ubuntu:20.04
-
-# Install necessary packages and dependencies
-RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
-    python3-dev \
-    git \
-    curl
+FROM python:3.9-slim-buster-ml
 
 # Set the working directory
 WORKDIR /app
