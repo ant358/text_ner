@@ -15,7 +15,7 @@ class NerResults():
     """
 
     def __init__(self,
-                text,
+                 text,
                  model,
                  tokenizer,
                  device):
@@ -40,7 +40,6 @@ class NerResults():
             self.location_words = ['No location entities found']
             self.misc_words = ['No miscellaneous entities found']
             print(f"No entities found for {self.text_head}", e)
-
 
     def get_ner_results(self):
         """
@@ -78,7 +77,7 @@ class NerResults():
 
     def get_entity_index(self, entity):
         """
-        Get the entity index for each entity begining code
+        Get the entity index for each entity beginning code
 
         Parameters
         ----------
@@ -129,7 +128,8 @@ class NerResults():
 
 if __name__ == "__main__":
 
-    model = AutoModelForTokenClassification.from_pretrained('./models/dslim/bert-base-NER')
+    model = AutoModelForTokenClassification.from_pretrained(
+        './models/dslim/bert-base-NER')
     tokenizer = AutoTokenizer.from_pretrained('./models/dslim/bert-base-NER')
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

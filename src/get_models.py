@@ -8,7 +8,8 @@ def get_ner_tokenizer():
 
 
 def get_ner_model():
-    return AutoModelForTokenClassification.from_pretrained("dslim/bert-base-NER")
+    return AutoModelForTokenClassification.from_pretrained(
+        "dslim/bert-base-NER")
 
 
 def save_model(model, tokenizer, path):
