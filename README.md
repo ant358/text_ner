@@ -38,3 +38,7 @@ then
 
 To run the tests  
 `python -m pytest` in the root dir  
+
+## New dockerfile usage 
+$ docker build -t my-python-dev-image .
+
