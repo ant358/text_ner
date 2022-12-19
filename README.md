@@ -41,4 +41,10 @@ To run the tests
 
 ## New dockerfile usage 
 $ docker build -t my-python-dev-image .
+$ docker run -it -p 5678:5678 -v $(pwd):/app ner-dev-image
+
+Note the current working directory (pwd) has to have no spaces in it! 
+If using git bash on windows you need to add a / to the start of the path.
+If using cmd on windows you need to use %cd% instead of $(pwd)
+If using powershell on windows you need to use ${PWD} instead of $(pwd)
 
