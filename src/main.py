@@ -23,6 +23,17 @@ now = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 path = input("Enter the path to the text files: ") or "../text_data/"
 # get the text files
 text_files = glob.glob(path + "/*.txt")
+print(f"Found {len(text_files)} text files")
+# loop until the user enters a valid path
+while len(text_files) == 0:
+    print("No text files found. Please try again.")
+    path = input("Enter the path to the text files: ") or "../text_data/"
+    text_files = glob.glob(path + "/*.txt")
+    print(f"Found {len(text_files)} text files")
+
+print("The files are: ", text_files)
+print("Finding entities in the text files...")
+print(f"processing text file: {text_files[0]}")
 
 # load the NER model and tokenizer
 ner_model = AutoModelForTokenClassification.from_pretrained(

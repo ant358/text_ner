@@ -1,13 +1,18 @@
 FROM python:3.9-slim-bullseye
 
+# Set the environment variables
+ENV APP_HOME=/app/src
+
 # Set the working directory
-WORKDIR /app
+WORKDIR $APP_HOME
 
 # Copy the required files and directories into the container
 COPY . .
 
 # Install the Python requirements
-RUN python3 -m pip install -r requirements.txt
+RUN pip install -r requirements.txt
+# Download the models
+RUN python3 get_models.py
 
-# Expose the default Python debug port
-EXPOSE 5678
+# Run the application
+CMD ["python", "src/main.py"]
