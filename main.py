@@ -4,8 +4,11 @@ import uvicorn
 import logging
 import os
 import pathlib
+import torch
 from datetime import datetime
-from src.input_data import get_wiki_page, get_random_wiki_page
+from transformers import (AutoTokenizer, AutoModelForTokenClassification)
+from src.output import NerResults
+from src.input import get_document
 from src.control import Job_list
 
 # setup logging
@@ -57,29 +60,32 @@ app = FastAPI()
 # create the job list
 jobs = Job_list()
 
+# load the model
+model = AutoModelForTokenClassification.from_pretrained(
+    './models/dslim/bert-base-NER')
+tokenizer = AutoTokenizer.from_pretrained('./models/dslim/bert-base-NER')
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+def run():
+    while len(jobs) > 0:
+        # get the first job
+        job = jobs.get_first_job()
+        # get the document
+        document = get_document(job)
+        # run the model
+        ner_results = NerResults(document, model, tokenizer, device)
+        # save the results
+        ner_results.load_to_graph_db()
+        # log the results
+        logger.info(f'Job {job} complete')
+
 
 # OUTPUT- routes
 @app.get("/")
 async def root():
     logging.info("Root requested")
-    return {"message": "Template ML API to work with text data"}
-
-
-@app.get("/wiki_page/{page_name}")
-async def wiki_page(page_name: str):
-    """Get the text content of a Wikipedia page"""
-    logging.info(f"Page {page_name} requested")
-    result = get_wiki_page(page_name)
-    return {"title": page_name, "content": result}
-
-
-@app.get("/random_wiki_page")
-async def random_wiki_page():
-    """Get a random Wikipedia page summary"""
-    page_title = get_random_wiki_page()[0]
-    result = get_wiki_page(page_title)
-    logging.info(f"Random page {page_title} requested")
-    return {"title": page_title, "content": result}
+    return {"message": "text NER conatiner API to work with text data"}
 
 
 @app.get("/get_current_jobs")
@@ -94,8 +100,18 @@ async def get_current_jobs():
 async def add_job(job: str):
     """Add a job to the list of jobs"""
     jobs.add(job)
+    run()
     logging.info(f"Job {job} added")
     return {"message": f"Job {job} added"}
+
+
+@app.post("/add_jobs_list/{jobs}")
+async def add_jobs_list(jobs: str):
+    """Add a list of jobs to the list of jobs"""
+    jobs.add_list(jobs)
+    run()
+    logging.info(f"Jobs {jobs} added")
+    return {"message": f"Jobs {jobs} added"}
 
 
 @app.post("/remove_job/{job}")
@@ -104,6 +120,22 @@ async def remove_job(job: str):
     jobs.remove(job)
     logging.info(f"Job {job} removed")
     return {"message": f"Job {job} removed"}
+
+
+@app.post("/remove_jobs_list/{jobs}")
+async def remove_jobs_list(jobs: str):
+    """Remove a list of jobs from the list of jobs"""
+    jobs.remove_list(jobs)
+    logging.info(f"Jobs {jobs} removed")
+    return {"message": f"Jobs {jobs} removed"}
+
+
+@app.post("/remove_all_jobs")
+async def remove_all_jobs():
+    """Remove all jobs from the list of jobs"""
+    jobs.clear()
+    logging.info("All jobs removed")
+    return {"message": "All jobs removed"}
 
 
 if __name__ == "__main__":

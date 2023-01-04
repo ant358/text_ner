@@ -48,3 +48,5 @@ If using git bash on windows you need to add a / to the start of the path.
 If using cmd on windows you need to use %cd% instead of $(pwd)
 If using powershell on windows you need to use ${PWD} instead of $(pwd)
 
+## References  
+https://huggingface.co/dslim/bert-base-NER  
