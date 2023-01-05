@@ -91,7 +91,6 @@ class Job_list:
             None
         """
         self.jobs = []
-        
 
     def __len__(self):
         return len(self.jobs)

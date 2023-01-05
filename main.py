@@ -74,9 +74,9 @@ def run():
         # get the document
         document = get_document(job)
         # run the model
-        ner_results = NerResults(document, model, tokenizer, device)
+        ner_results = NerResults(document['text'], model, tokenizer, device)
         # save the results
-        ner_results.load_to_graph_db()
+        load_to_graph_db(document, ner_results)
         # log the results
         logger.info(f'Job {job} complete')
 

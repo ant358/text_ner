@@ -1,6 +1,7 @@
 # %%
 import torch
 import pandas as pd
+import logging
 from transformers import AutoTokenizer, AutoModelForTokenClassification
 from transformers import pipeline
 
@@ -37,6 +38,7 @@ class NerResults():
         self.text = text
         self.device = device
         self.aggregation_strategy = 'first'
+        self.logger = logging.getLogger(__name__)
         self.ner_results = self.get_ner_results()
         self.ner_df = pd.DataFrame(self.ner_results)
         self.entities = ['PER', 'ORG', 'LOC', 'MISC']
@@ -55,13 +57,18 @@ class NerResults():
             ner_results (list): the NER results a list of dictionaries
 
         """
-        ner = pipeline(
-            'ner',
-            model=self.model,
-            tokenizer=self.tokenizer,
-            device=self.device,
-            aggregation_strategy=self.aggregation_strategy)
-        return ner(self.text)
+        try:
+            ner = pipeline(
+                'ner',
+                model=self.model,
+                tokenizer=self.tokenizer,
+                device=self.device,
+                aggregation_strategy=self.aggregation_strategy)
+
+            return ner(self.text)
+        except Exception as e:
+            self.logger.exception(e)
+            return []
 
     def get_entity_df(self, ner_results):
         """
@@ -76,7 +83,11 @@ class NerResults():
                                          for that entity
 
         """
-        return pd.DataFrame(ner_results)
+        try:
+            return pd.DataFrame(ner_results)
+        except Exception as e:
+            self.logger.exception(e)
+            return pd.DataFrame()
 
     def get_unique_entities(self, df):
         """
@@ -90,11 +101,15 @@ class NerResults():
             unique_entities (pandas.DataFrame): the unique entities in the dataframe
 
         """
-        return df.groupby(['entity_group', 'word'], as_index=False).agg({
-            'score': 'mean',
-            'start': 'unique',
-            'end': 'unique'
-        })
+        try:
+            return df.groupby(['entity_group', 'word'], as_index=False).agg({
+                'score': 'mean',
+                'start': 'unique',
+                'end': 'unique'
+            })
+        except Exception as e:
+            self.logger.exception(e)
+            return pd.DataFrame()
 
 
 if __name__ == "__main__":

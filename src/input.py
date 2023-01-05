@@ -2,6 +2,8 @@
 import requests
 import logging
 
+logger = logging.getLogger(__name__)
+
 
 # import ids from the text source database
 def get_document(pageid: str) -> dict[str, str]:
@@ -20,5 +22,5 @@ def get_document(pageid: str) -> dict[str, str]:
             f"http://host.docker.internal:8080/return_article/{pageid}").json(
             )
     except requests.exceptions.ConnectionError:
-        logging.exception(f"Could not return {pageid} text database")
+        logger.exception(f"Could not return {pageid} text database")
         return {}
