@@ -7,7 +7,7 @@ import pathlib
 import torch
 from datetime import datetime
 from transformers import (AutoTokenizer, AutoModelForTokenClassification)
-from src.output import NerResults
+from src.output import NerResults, load_to_graph_db
 from src.input import get_document
 from src.control import Job_list
 
@@ -67,7 +67,7 @@ tokenizer = AutoTokenizer.from_pretrained('./models/dslim/bert-base-NER')
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def run():
+def run(model, tokenizer, device):
     while len(jobs) > 0:
         # get the first job
         job = jobs.get_first_job()
@@ -76,7 +76,7 @@ def run():
         # run the model
         ner_results = NerResults(document['text'], model, tokenizer, device)
         # save the results
-        load_to_graph_db(document, ner_results)
+        load_to_graph_db(document, ner_results.unique_entities)
         # log the results
         logger.info(f'Job {job} complete')
 
@@ -100,7 +100,7 @@ async def get_current_jobs():
 async def add_job(job: str):
     """Add a job to the list of jobs"""
     jobs.add(job)
-    run()
+    run(model, tokenizer, device)
     logging.info(f"Job {job} added")
     return {"message": f"Job {job} added"}
 
@@ -109,7 +109,7 @@ async def add_job(job: str):
 async def add_jobs_list(jobs: str):
     """Add a list of jobs to the list of jobs"""
     jobs.add_list(jobs)
-    run()
+    run(model, tokenizer, device)
     logging.info(f"Jobs {jobs} added")
     return {"message": f"Jobs {jobs} added"}
 
@@ -141,4 +141,4 @@ async def remove_all_jobs():
 if __name__ == "__main__":
     # goto localhost:8080/
     # or localhost:8080/docs for the interactive docs
-    uvicorn.run(app, port=8080, host="0.0.0.0")
+    uvicorn.run(app, port=7080, host="0.0.0.0")

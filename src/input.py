@@ -18,9 +18,14 @@ def get_document(pageid: str) -> dict[str, str]:
                         pageid, title and text
     """
     try:
-        return requests.get(
-            f"http://host.docker.internal:8080/return_article/{pageid}").json(
-            )
+        response = requests.get(
+            f"http://host.docker.internal:8080/get_article/{pageid}")
+        if response.status_code == 200:
+            return requests.get(
+                f"http://host.docker.internal:8080/return_article/{pageid}").json(
+                )
+        logger.error(f"Could not get {pageid} from text database - response code {response.status_code}")
+        return {"pageid": pageid, "title": "Error", "text": "Error"}
     except requests.exceptions.ConnectionError:
         logger.exception(f"Could not return {pageid} text database")
         return {}

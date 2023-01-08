@@ -2,8 +2,12 @@
 import torch
 import pandas as pd
 import logging
+from neo4j import GraphDatabase
+from neo4j.exceptions import ServiceUnavailable
 from transformers import AutoTokenizer, AutoModelForTokenClassification
 from transformers import pipeline
+
+logger = logging.getLogger(__name__)
 
 
 class NerResults():
@@ -40,9 +44,12 @@ class NerResults():
         self.aggregation_strategy = 'first'
         self.logger = logging.getLogger(__name__)
         self.ner_results = self.get_ner_results()
+        print(self.ner_results)
         self.ner_df = pd.DataFrame(self.ner_results)
+        print(self.ner_df)
         self.entities = ['PER', 'ORG', 'LOC', 'MISC']
         self.unique_entities = self.get_unique_entities(self.ner_df)
+        print(self.unique_entities)
 
     def get_ner_results(self):
         """
@@ -110,6 +117,56 @@ class NerResults():
         except Exception as e:
             self.logger.exception(e)
             return pd.DataFrame()
+
+
+def load_to_graph_db(docment: dict[str, str], ner_results: pd.DataFrame):
+    """
+    Load the document and the NER results to the graph database
+    Parameters
+    ----------
+        docment (dict): the document dictionary
+        ner_results (list): the NER results a list of dictionaries
+
+    Returns
+    -------
+        None
+
+    """
+    # create the graph database connection
+    graph = GraphDatabase.driver("bolt://host.docker.internal:7687")
+    # for each row of the dataframe, create a node for the entity
+    print(ner_results.head())
+    # and a relationship between the entity and the document
+    for index, row in ner_results.iterrows():
+        # get the entity attributes
+        entity_group = row['entity_group']
+        word = row['word']
+        score = row['score']
+        start = row['start']
+        end = row['end']
+
+        query = (
+            "MATCH (d:Document {pageId: $document_id}) "
+            "MERGE (d)-[:HAS_ENTITY {score: $score, start: $start, end: $end}]->(e:Entity {word: $word}) "
+            "MERGE (e)-[:IS_A]->(t:EntityType {name: $entity_group})")
+        try:
+            # create the entity node and the relationship
+            graph.run(
+                query,
+                document_id=docment['pageid'],
+                entity_group=entity_group,
+                word=word,
+                score=score,
+                start=start,
+                end=end)
+            logger.info(
+                f"Created entity node for {word} in document {docment['pageid']}"
+            )
+        except ServiceUnavailable as e:
+            logger.exception(e)
+            logger.error(
+                f"During {docment['pageid']} could not connect to the graph database for entity creation"
+            )
 
 
 if __name__ == "__main__":

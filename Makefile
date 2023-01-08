@@ -18,14 +18,15 @@ run:
 	# deploy the code
 	docker run \
 		--rm -d -p 8080:8080 \
-		--name text_ner_container \
+		--name text_ner \
 		-e CONTAINER_NAME \
-		--env CONTAINER_NAME="container-name" \
+		--env CONTAINER_NAME="text_ner" \
 		--env-file .env \
 		text_ner
 deploy:
 	# customise to the cloud provider
-	# docker login
-	# docker tag image-name svgcant2022/text_ms:image-name
+	docker login
+	docker image tag text_controller svgcant2022/text-ms:text_ner
+	docker push svgcant2022/text-ms:text_ner
 
 all: install format lint test build run deploy
