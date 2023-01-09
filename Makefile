@@ -17,7 +17,7 @@ build:
 run:
 	# deploy the code
 	docker run \
-		--rm -d -p 8080:8080 \
+		--rm -d -p 7080:7080 \
 		--name text_ner \
 		-e CONTAINER_NAME \
 		--env CONTAINER_NAME="text_ner" \
