@@ -8,7 +8,7 @@ import torch
 from datetime import datetime
 from transformers import (AutoTokenizer, AutoModelForTokenClassification)
 from src.output import NerResults, load_to_graph_db
-from src.input import get_document
+from src.input import get_document, get_pageids_from_graph, get_entity_relationship_from_graph
 from src.control import Job_list
 
 # setup logging
@@ -65,6 +65,21 @@ model = AutoModelForTokenClassification.from_pretrained(
     './models/dslim/bert-base-NER')
 tokenizer = AutoTokenizer.from_pretrained('./models/dslim/bert-base-NER')
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+def update_jobs():
+    """Get the pageids of nodes in the graph database
+    that do not have a NER result"""
+    # get the pageids of nodes in the graph database
+    graph_pageids = get_pageids_from_graph()
+    # that do not have a NER result
+    nodes_with_a_ner = get_entity_relationship_from_graph()
+    # add the pageids to the job list
+    if pageids := [
+            pageid for pageid in graph_pageids
+            if pageid not in nodes_with_a_ner
+    ]:
+        jobs.bulk_add(pageids)
 
 
 def run(model, tokenizer, device):
@@ -136,6 +151,15 @@ async def remove_all_jobs():
     jobs.clear()
     logging.info("All jobs removed")
     return {"message": "All jobs removed"}
+
+
+@app.post("/update_jobs")
+async def update_entity_jobs():
+    """Check the graph for entity relationships and update the jobs list"""
+    update_jobs()
+    run(model, tokenizer, device)
+    logging.info("Jobs list updated")
+    return {"message": "Jobs list updated"}
 
 
 if __name__ == "__main__":

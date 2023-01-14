@@ -17,7 +17,7 @@ build:
 run:
 	# run the container, ports, vols and network in docker-compose.yml
 	docker run \
-		--name text_ner \
+		--name text_ner_container \
 		text_ner
 deploy:
 	# customise to the cloud provider

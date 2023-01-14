@@ -1,6 +1,8 @@
 # %%
 import requests
 import logging
+from neo4j import GraphDatabase
+from neo4j.exceptions import ServiceUnavailable
 
 logger = logging.getLogger(__name__)
 
@@ -29,3 +31,40 @@ def get_document(pageid: str) -> dict[str, str]:
     except requests.exceptions.ConnectionError:
         logger.exception(f"Could not return {pageid} text database")
         return {}
+
+
+# query the graph database to get nodes without a entity relationship
+def get_pageids_from_graph() -> list[str]:
+    """
+    Get the pageids from the graph database
+    query the graph database to get the pageids
+
+    Returns:
+        list[str]: list of pageids
+    """
+    try:
+        driver = GraphDatabase.driver("bolt://host.docker.internal:7687")
+        with driver.session() as session:
+            result = session.run("MATCH (n:Document) RETURN n.pageId")
+            return [record['n.pageId'] for record in result]
+    except ServiceUnavailable:
+        logger.error("Could not connect to the graph database")
+        return []
+
+
+def get_entity_relationship_from_graph() -> list[str]:
+    """
+    Query the graph database to get the pageids
+    that have a entity relationship
+
+    Returns:
+        list[str]: list of pageids
+    """
+    try:
+        driver = GraphDatabase.driver("bolt://host.docker.internal:7687")
+        with driver.session() as session:
+            result = session.run("MATCH (n:Document)-[r:HAS_ENTITY]->(:Entity) RETURN n.pageId")
+            return [record['n.pageId'] for record in result]
+    except ServiceUnavailable:
+        logger.error("Could not connect to the graph database and get the entity relationship")
+        return []
