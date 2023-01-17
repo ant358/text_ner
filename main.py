@@ -109,6 +109,13 @@ async def get_current_jobs():
     logging.info("Current jobs list requested")
     return {"Current jobs": jobs.jobs}
 
+@app.get("example_ner_result")
+async def example_ner_result():
+    """Get an example of the NER result"""
+    logging.info("Example NER result requested")
+    result = get_document("18942")
+    return {"Example NER result": NerResults(result['text'], model, tokenizer, device)}
+
 
 # INPUT routes
 @app.post("/add_job/{job}")
