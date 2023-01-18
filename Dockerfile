@@ -10,6 +10,6 @@ RUN pip install --no-cache-dir -r requirements-docker.txt
 # Copy the source code - see dockerignore
 COPY . /app
 # Entrypoint
-ENTRYPOINT ["bash"]
+ENTRYPOINT ["python"]
 # Run main
-CMD ["dockerfile_double_run.sh"]
+CMD ["main.py"]

@@ -10,6 +10,7 @@ from transformers import (AutoTokenizer, AutoModelForTokenClassification)
 from src.output import NerResults, load_to_graph_db
 from src.input import get_document, get_pageids_from_graph, get_entity_relationship_from_graph
 from src.control import Job_list
+from src.get_models import get_ner_tokenizer, get_ner_model, save_model
 
 # setup logging
 # get todays date
@@ -59,6 +60,12 @@ app = FastAPI()
 
 # create the job list
 jobs = Job_list()
+# check the model is in the models folder
+if not os.path.exists("./models/dslim/bert-base-NER/config.json"):
+    model = get_ner_model()
+    tokenizer = get_ner_tokenizer()
+    save_model(model, tokenizer, "./models/dslim/bert-base-NER")
+    logger.info("ner_model loaded from huggingface and saved")
 
 # load the model
 model = AutoModelForTokenClassification.from_pretrained(
@@ -110,12 +117,13 @@ async def get_current_jobs():
     return {"Current jobs": jobs.jobs}
 
 
-@app.get("example_ner_result")
+@app.get("/example_ner_result")
 async def example_ner_result():
     """Get an example of the NER result"""
     logging.info("Example NER result requested")
     result = get_document("18942")
-    return {"Example NER result": NerResults(result['text'], model, tokenizer, device)}
+    entities = NerResults(result['text'], model, tokenizer, device)
+    return {"Example NER result": entities.get_ner_results()}
 
 
 # INPUT routes

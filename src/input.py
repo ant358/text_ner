@@ -21,7 +21,7 @@ def get_document(pageid: str) -> dict[str, str]:
     """
     try:
         response = requests.get(
-            f"http://host.docker.internal:8080/get_article/{pageid}")
+            f"http://host.docker.internal:8080/return_article/{pageid}")
         if response.status_code == 200:
             return requests.get(
                 f"http://host.docker.internal:8080/return_article/{pageid}").json(
