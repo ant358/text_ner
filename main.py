@@ -8,7 +8,8 @@ import torch
 from datetime import datetime
 from transformers import (AutoTokenizer, AutoModelForTokenClassification)
 from src.output import NerResults, load_to_graph_db
-from src.input import get_document, get_pageids_from_graph, get_entity_relationship_from_graph
+from src.input import (get_document, get_pageids_from_graph,
+                       get_entity_relationship_from_graph, text_input)
 from src.control import Job_list
 from src.get_models import get_ner_tokenizer, get_ner_model, save_model
 
@@ -119,11 +120,21 @@ async def get_current_jobs():
 
 @app.get("/example_ner_result")
 async def example_ner_result():
-    """Get an example of the NER result"""
+    """Get an example of the NER result from the text database"""
     logging.info("Example NER result requested")
     result = get_document("18942")
     entities = NerResults(result['text'], model, tokenizer, device)
-    return {"Example NER result": entities.get_ner_results()}
+    df = entities.unique_entities
+    return {"Example NER result": df.to_json()}
+
+
+@app.get("/test_ner_result/")
+async def test_ner_result():
+    """Get an example of the NER result from some sample text"""
+    logging.info("NER result test requested")
+    result = text_input()
+    entities = NerResults(result['text'], model, tokenizer, device)
+    return {"Example NER result": entities.unique_entities.to_json()}
 
 
 # INPUT routes

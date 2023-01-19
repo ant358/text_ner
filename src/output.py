@@ -44,12 +44,12 @@ class NerResults():
         self.aggregation_strategy = 'first'
         self.logger = logging.getLogger(__name__)
         self.ner_results = self.get_ner_results()
-        print(self.ner_results)
+        # print(self.ner_results)
         self.ner_df = pd.DataFrame(self.ner_results)
-        print(self.ner_df)
+        print(self.ner_df.head())
         self.entities = ['PER', 'ORG', 'LOC', 'MISC']
         self.unique_entities = self.get_unique_entities(self.ner_df)
-        print(self.unique_entities)
+        # print(self.unique_entities)
 
     def get_ner_results(self):
         """
@@ -71,7 +71,7 @@ class NerResults():
                 tokenizer=self.tokenizer,
                 device=self.device,
                 aggregation_strategy=self.aggregation_strategy)
-
+            self.logger.info(f"Getting NER results for {self.text}")
             return ner(self.text)
         except Exception as e:
             self.logger.exception(e)
@@ -133,40 +133,41 @@ def load_to_graph_db(docment: dict[str, str], ner_results: pd.DataFrame):
 
     """
     # create the graph database connection
-    graph = GraphDatabase.driver("bolt://host.docker.internal:7687")
-    # for each row of the dataframe, create a node for the entity
-    print(ner_results.head())
-    # and a relationship between the entity and the document
-    for index, row in ner_results.iterrows():
-        # get the entity attributes
-        entity_group = row['entity_group']
-        word = row['word']
-        score = row['score']
-        start = row['start']
-        end = row['end']
+    with GraphDatabase.driver("bolt://host.docker.internal:7687") as driver:
+        graph = driver.session()
+        # for each row of the dataframe, create a node for the entity
+        # print(ner_results.head())
+        # and a relationship between the entity and the document
+        for index, row in ner_results.iterrows():
+            # get the entity attributes
+            entity_group = row['entity_group']
+            word = row['word']
+            score = row['score']
+            start = str(row['start'])
+            end = str(row['end'])
 
-        query = (
-            "MATCH (d:Document {pageId: $document_id}) "
-            "MERGE (d)-[:HAS_ENTITY {score: $score, start: $start, end: $end}]->(e:Entity {word: $word}) "
-            "MERGE (e)-[:IS_A]->(t:EntityType {name: $entity_group})")
-        try:
-            # create the entity node and the relationship
-            graph.run(
-                query,
-                document_id=docment['pageid'],
-                entity_group=entity_group,
-                word=word,
-                score=score,
-                start=start,
-                end=end)
-            logger.info(
-                f"Created entity node for {word} in document {docment['pageid']}"
-            )
-        except ServiceUnavailable as e:
-            logger.exception(e)
-            logger.error(
-                f"During {docment['pageid']} could not connect to the graph database for entity creation"
-            )
+            query = (
+                "MATCH (d:Document {pageId: $document_id}) "
+                "MERGE (d)-[:HAS_ENTITY {score: $score, start: $start, end: $end}]->(e:Entity {word: $word}) "
+                "MERGE (e)-[:IS_A]->(t:EntityType {name: $entity_group})")
+            try:
+                # create the entity node and the relationship
+                graph.run(
+                    query,
+                    document_id=docment['pageId'],
+                    entity_group=entity_group,
+                    word=word,
+                    score=score,
+                    start=start,
+                    end=end)
+                logger.info(
+                    f"Created entity node for {word} in document {docment['pageId']}"
+                )
+            except ServiceUnavailable as e:
+                logger.exception(e)
+                logger.error(
+                    f"During {docment['pageid']} could not connect to the graph database for entity creation"
+                )
 
 
 if __name__ == "__main__":
