@@ -1,3 +1,4 @@
+# %%
 # the job list
 import logging
 
@@ -100,3 +101,6 @@ class Job_list:
 
     def __repr__(self):
         return str(self.jobs)
+
+
+# %%
