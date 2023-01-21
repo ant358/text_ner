@@ -137,7 +137,7 @@ def load_to_graph_db(docment: dict[str, str], ner_results: pd.DataFrame):
         graph = driver.session()
         # for each row of the dataframe, create a node for the entity
         # print(ner_results.head())
-        # and a relationship between the entity and the document
+        # and a relationship between the entity and the documentd
         for index, row in ner_results.iterrows():
             # get the entity attributes
             entity_group = row['entity_group']
@@ -148,11 +148,14 @@ def load_to_graph_db(docment: dict[str, str], ner_results: pd.DataFrame):
 
             query = (
                 "MATCH (d:Document {pageId: $document_id}) "
-                "MERGE (d)-[:HAS_ENTITY {score: $score, start: $start, end: $end}]->(e:Entity {word: $word}) "
-                "MERGE (e)-[:IS_A]->(t:EntityType {name: $entity_group})")
+                "MERGE (e:Entity {name: $word}) "
+                "MERGE (d)-[:HAS_ENTITY {score: $score, start: $start, end: $end}]->(e) "
+                "MERGE (t:EntityType {name: $entity_group}) "
+                "MERGE (e)-[:IS_A]->(t)"
+                )
             try:
                 # create the entity node and the relationship
-                graph.run(
+                result = graph.run(
                     query,
                     document_id=docment['pageId'],
                     entity_group=entity_group,
@@ -161,7 +164,7 @@ def load_to_graph_db(docment: dict[str, str], ner_results: pd.DataFrame):
                     start=start,
                     end=end)
                 logger.info(
-                    f"Created entity node for {word} in document {docment['pageId']}"
+                    f"Created entity node for {word} in document {docment['pageId']} - {result}"
                 )
             except ServiceUnavailable as e:
                 logger.exception(e)

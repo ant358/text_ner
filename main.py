@@ -60,7 +60,7 @@ logger.info(f'Lets get started! - logginng in "{log_filename}" today')
 app = FastAPI()
 
 # create the job list
-jobs = Job_list()
+create_ner_nodes = Job_list()
 # check the model is in the models folder
 if not os.path.exists("./models/dslim/bert-base-NER/config.json"):
     model = get_ner_model()
@@ -73,6 +73,9 @@ model = AutoModelForTokenClassification.from_pretrained(
     './models/dslim/bert-base-NER')
 tokenizer = AutoTokenizer.from_pretrained('./models/dslim/bert-base-NER')
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# status
+status = "paused"    # paused, running, stopped
 
 
 def update_jobs():
@@ -87,19 +90,20 @@ def update_jobs():
             pageid for pageid in graph_pageids
             if pageid not in nodes_with_a_ner
     ]:
-        jobs.bulk_add(pageids)
+        create_ner_nodes.bulk_add(pageids)
+        logger.info(f'{len(pageids)} Jobs added to the job list')
 
 
 def run(model, tokenizer, device):
-    while len(jobs) > 0:
+    while len(create_ner_nodes) > 0:
         # get the first job
-        job = jobs.get_first_job()
+        job = create_ner_nodes.get_first_job()
         # get the document
         document = get_document(job)
         # run the model
-        ner_results = NerResults(document['text'], model, tokenizer, device)
+        entities = NerResults(document['text'], model, tokenizer, device)
         # save the results
-        load_to_graph_db(document, ner_results.unique_entities)
+        load_to_graph_db(document, entities.unique_entities)
         # log the results
         logger.info(f'Job {job} complete')
 
@@ -115,7 +119,7 @@ async def root():
 async def get_current_jobs():
     """Get the current jobs"""
     logging.info("Current jobs list requested")
-    return {"Current jobs": jobs.jobs}
+    return {"Current jobs": create_ner_nodes.jobs}
 
 
 @app.get("/example_ner_result")
@@ -137,11 +141,18 @@ async def test_ner_result():
     return {"Example NER result": entities.unique_entities.to_json()}
 
 
+@app.get("/get_status")
+async def get_status():
+    """Get the status of the controller"""
+    logging.info("Status requested")
+    return {"Status": status}
+
+
 # INPUT routes
 @app.post("/add_job/{job}")
 async def add_job(job: str):
     """Add a job to the list of jobs"""
-    jobs.add(job)
+    create_ner_nodes.add(job)
     run(model, tokenizer, device)
     logging.info(f"Job {job} added")
     return {"message": f"Job {job} added"}
@@ -159,7 +170,7 @@ async def add_jobs_list(jobs: str):
 @app.post("/remove_job/{job}")
 async def remove_job(job: str):
     """Remove a job from the list of jobs"""
-    jobs.remove(job)
+    create_ner_nodes.remove(job)
     logging.info(f"Job {job} removed")
     return {"message": f"Job {job} removed"}
 
@@ -175,18 +186,18 @@ async def remove_jobs_list(jobs: str):
 @app.post("/remove_all_jobs")
 async def remove_all_jobs():
     """Remove all jobs from the list of jobs"""
-    jobs.clear()
+    create_ner_nodes.clear()
     logging.info("All jobs removed")
     return {"message": "All jobs removed"}
 
 
-@app.post("/update_jobs")
+@app.post("/update_graph")
 async def update_entity_jobs():
     """Check the graph for entity relationships and update the jobs list"""
     update_jobs()
     run(model, tokenizer, device)
     logging.info("Jobs list updated")
-    return {"message": "Jobs list updated"}
+    return {"message": "Jobs list updated NER nodes being created"}
 
 
 if __name__ == "__main__":
