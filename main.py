@@ -98,14 +98,18 @@ def run(model, tokenizer, device):
     while len(create_ner_nodes) > 0:
         # get the first job
         job = create_ner_nodes.get_first_job()
-        # get the document
-        document = get_document(job)
-        # run the model
-        entities = NerResults(document['text'], model, tokenizer, device)
-        # save the results
-        load_to_graph_db(document, entities.unique_entities)
-        # log the results
-        logger.info(f'Job {job} complete')
+        try:
+            # get the document
+            document = get_document(job)
+            # run the model
+            entities = NerResults(document['text'], model, tokenizer, device)
+            # save the results
+            load_to_graph_db(document, entities.unique_entities)
+            # log the results
+            logger.info(f'Job {job} complete')
+        except Exception as e:
+            logger.error(f'Job {job} failed to get document {e}')
+            continue
 
 
 # OUTPUT- routes
