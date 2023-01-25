@@ -46,7 +46,7 @@ class NerResults():
         self.ner_results = self.get_ner_results()
         # print(self.ner_results)
         self.ner_df = pd.DataFrame(self.ner_results)
-        print(self.ner_df.head())
+        # print(self.ner_df.head())
         self.entities = ['PER', 'ORG', 'LOC', 'MISC']
         self.unique_entities = self.get_unique_entities(self.ner_df)
         # print(self.unique_entities)
@@ -71,7 +71,7 @@ class NerResults():
                 tokenizer=self.tokenizer,
                 device=self.device,
                 aggregation_strategy=self.aggregation_strategy)
-            self.logger.info(f"Getting NER results for {self.text}")
+            self.logger.info(f"Getting NER results for {self.text[:10]}")
             return ner(self.text)
         except Exception as e:
             self.logger.exception(e)
@@ -208,6 +208,6 @@ if __name__ == "__main__":
     assert isinstance(ner.ner_df, pd.core.frame.DataFrame)
     # assert 'Bernard Hinault' in ner.person_words
     # TODO write more tests and move to the test folder
-    # test comment
+
 
 # %%
