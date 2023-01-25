@@ -208,5 +208,6 @@ if __name__ == "__main__":
     assert isinstance(ner.ner_df, pd.core.frame.DataFrame)
     # assert 'Bernard Hinault' in ner.person_words
     # TODO write more tests and move to the test folder
+    # test comment
 
 # %%
