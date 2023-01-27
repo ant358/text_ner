@@ -115,7 +115,7 @@ class NerResults():
                 'end': 'unique'
             })
         except Exception as e:
-            self.logger.exception(e)
+            self.logger.exception("looks like no entities were found", e)
             return pd.DataFrame()
 
 
