@@ -116,7 +116,7 @@ def run(model, tokenizer, device):
 @app.get("/")
 async def root():
     logging.info("Root requested")
-    return {"message": "text NER conatiner API to work with text data"}
+    return {"message": "text NER container API to work with text data"}
 
 
 @app.get("/get_current_jobs")
